@@ -32,31 +32,37 @@ function display_captcha_secret_key_element() { ?>
   <input type="text" name="captcha_secret_key" id="captcha_secret_key" value="<?php echo get_option('captcha_secret_key'); ?>" />
 <?php }
 add_action("admin_init", "display_recaptcha_options");
+
 //LOGIN
 function login_recaptcha_script() {
-  wp_register_script("recaptcha_login", "https://www.google.com/recaptcha/api.js");
+  $recaptcha_key= get_option('captcha_site_key');
+  wp_register_script("recaptcha_login", "https://www.google.com/recaptcha/api.js?render=". $recaptcha_key ."");
   wp_enqueue_script("recaptcha_login");
 }
 add_action("login_enqueue_scripts", "login_recaptcha_script");
+
 function display_login_captcha() { ?>
-<script>
-function onSubmit(token) {
-document.getElementById('loginform').submit();
-}
-</script>
-<button class='g-recaptcha' data-sitekey='<?php echo get_option('captcha_site_key'); ?>' data-callback='onSubmit' data-size='invisible' style='display:none;'>Submit</button>";
+<script>grecaptcha.ready(function () {              
+grecaptcha.execute('<?php echo get_option('captcha_site_key'); ?>', 
+{ action: 'login' }).then(function (token) {                  
+var recaptchaResponse = document.getElementById('recaptchaResponse');                  
+recaptchaResponse.value = token;              
+  });          
+});      
+</script> 
+<input type="hidden" name="recaptcha_response" id="recaptchaResponse">  
 
 <?php }
 add_action( "login_form", "display_login_captcha" );
 function verify_login_captcha($user, $password) {
-  if (isset($_POST['g-recaptcha-response'])) {
+  if (isset($_POST['recaptcha_response'])) {
   $recaptcha_secret = get_option('captcha_secret_key');
-  $response = wp_remote_get("https://www.google.com/recaptcha/api/siteverify?secret=". $recaptcha_secret ."&response=". $_POST['g-recaptcha-response']);
-  $response = json_decode($response["body"], true);
-  if (true == $response["success"]) {
+  $response = wp_remote_get("https://www.google.com/recaptcha/api/siteverify?secret=". $recaptcha_secret ."&response=". $_POST['recaptcha_response']);
+  $response = json_decode($response);
+  if ($response->score >= 0.5) {
   return $user;
   } else {
-  //return new WP_Error("Captcha Invalid", __("<strong>ERROR</strong>: You are a bot"));
+  return new WP_Error("Captcha Invalid", __("<strong>ERROR</strong>: You are a bot"));
   } 
   } else {
   return new WP_Error("Captcha Invalid", __("<strong>ERROR</strong>: You are a bot. If not then enable JavaScript"));
