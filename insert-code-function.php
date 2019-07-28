@@ -1,5 +1,6 @@
 // RECAPTCHA V3
-// MENU
+
+// MENU OPTIONS
 function no_captcha_recaptcha_menu() {
   add_menu_page("reCapatcha Options", "reCaptcha Options", "manage_options", "recaptcha-options", "recaptcha_options_page", "", 100);
 }
@@ -13,7 +14,9 @@ function recaptcha_options_page() { ?>
   </form>
   </div>
 <?php }
+
 add_action("admin_menu", "no_captcha_recaptcha_menu");
+
 function display_recaptcha_options() {
   add_settings_section("header_section", "Keys", "display_recaptcha_content", "recaptcha-options");
   add_settings_field("captcha_site_key", __("Site Key"), "display_captcha_site_key_element", "recaptcha-options", "header_section");
@@ -31,14 +34,16 @@ function display_captcha_site_key_element() { ?>
 function display_captcha_secret_key_element() { ?>
   <input type="text" name="captcha_secret_key" id="captcha_secret_key" value="<?php echo get_option('captcha_secret_key'); ?>" />
 <?php }
+
 add_action("admin_init", "display_recaptcha_options");
 
-//LOGIN
+//LOGIN PAGE
 function login_recaptcha_script() {
   $recaptcha_key= get_option('captcha_site_key');
   wp_register_script("recaptcha_login", "https://www.google.com/recaptcha/api.js?render=". $recaptcha_key ."");
   wp_enqueue_script("recaptcha_login");
 }
+
 add_action("login_enqueue_scripts", "login_recaptcha_script");
 
 function display_login_captcha() { ?>
@@ -53,7 +58,9 @@ recaptchaResponse.value = token;
 <input type="hidden" name="recaptcha_response" id="recaptchaResponse">  
 
 <?php }
+
 add_action( "login_form", "display_login_captcha" );
+
 function verify_login_captcha($user, $password) {
   if (isset($_POST['recaptcha_response'])) {
   $recaptcha_secret = get_option('captcha_secret_key');
@@ -68,4 +75,5 @@ function verify_login_captcha($user, $password) {
   return new WP_Error("Captcha Invalid", __("<strong>ERROR</strong>: You are a bot. If not then enable JavaScript"));
   }  
 }
+
 add_filter("wp_authenticate_user", "verify_login_captcha", 10, 2);
